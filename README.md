@@ -3,7 +3,7 @@
 ## Introduction
 In this document, we present a chat system project based on TCP sockets, including its design, implementation, and analysis using Python.
 The goal is to understand fundamental networking concepts, client–server communication, and the architecture of distributed systems. 
-The project was developed by Noa Rachmani, Noa Zadok and Liran Shterenberg — Computer Science students.
+The project was developed by Noa Rachamim, Noa Zadok and Liran Shterenberg — Computer Science students.
 
 ---
 
@@ -104,5 +104,5 @@ The detailed analysis is included in `analysis_report.pdf`.
 ---
 
 ## 👤 Authors
-**Noa Rachmani, Noa Zadok and Liran Shterenberg**  
+**Noa Rachamim, Noa Zadok and Liran Shterenberg**  
 Computer Science Students
