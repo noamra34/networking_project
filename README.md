@@ -58,7 +58,7 @@ project/
 
 ---
 
-## ▶️ How to Run the Application
+##  How to Run the Application
 
 ### **1. Start the server**
 
@@ -75,7 +75,7 @@ The server routes messages privately between the two selected clients.
 
 ---
 
-## 📡 Network Traffic Capture
+## Network Traffic Capture
 
 ### **1. Capturing the traffic**
 - Wireshark was used to capture all TCP packets exchanged between the server and clients.
@@ -94,7 +94,7 @@ The detailed analysis is included in `analysis_report.pdf`.
 
 ---
 
-## 🚀 Future Improvements
+## Future Improvements
 - Adding encrypted communication (TLS)
 - User authentication & password system
 - Group chat support
@@ -103,6 +103,6 @@ The detailed analysis is included in `analysis_report.pdf`.
 
 ---
 
-## 👤 Authors
+## Authors
 **Noa Rachamim, Noa Zadok and Liran Shterenberg**  
 Computer Science Students
