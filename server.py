@@ -12,7 +12,13 @@ def handle_client(client_socket, adder):
         username = client_socket.recv(1024).decode()
 
         with lock:
-            clients[username] = client_socket
+            if username in clients:
+                client_socket.send("REFUSED".encode())
+                client_socket.close()
+                return
+            else:
+                client_socket.send("APPROVE".encode())
+                clients[username] = client_socket
         
         print(f"{username} conneted from {adder}")
         while True:
