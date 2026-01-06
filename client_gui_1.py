@@ -14,7 +14,8 @@ COLORS = {
     "time": "#8696a0",         # צבע טקסט שעה
     "input_bg": "#2a3942",     # רקע תיבת כתיבה
     "list_select": "#2a3942",  # בחירה ברשימה
-    "btn": "#00a884"           # כפתור שליחה ירוק
+    "btn": "#00a884",          # כפתור שליחה ירוק
+    "notification": "#00a884"  # צבע מונה הודעות (ירוק)
 }
 
 SERVER_IP = "127.0.0.1"
@@ -26,8 +27,15 @@ username = ""
 current_chat_partner = None
 
 # מבנה הנתונים להיסטוריה:
-# { "user1": [ {"sender": "me", "msg": "hi", "time": "10:00"}, ... ], "user2": ... }
+# { "user1": [ {"sender": "me", "msg": "hi", "time": "10:00"}, ... ] }
 conversations = {} 
+
+# מבנה נתונים למונה הודעות שלא נקראו
+# { "user1": 3, "user2": 0 }
+unread_counts = {}
+
+# רשימת המשתמשים הפעילים (כדי שנוכל לרענן את ה-UI בלי לאבד מידע)
+active_users_list = []
 
 root = tk.Tk()
 root.withdraw() # החבאה עד להתחברות
@@ -123,7 +131,29 @@ input_frame.pack(fill=tk.X, side=tk.BOTTOM)
 msg_entry = tk.Entry(input_frame, bg=COLORS["input_bg"], fg="white", font=("Helvetica", 12), borderwidth=0, insertbackground="white")
 msg_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=15, ipady=8)
 
-# --- לוגיקת ניהול הודעות ---
+# --- פונקציות ניהול UI ---
+
+def update_sidebar():
+    """מרענן את רשימת אנשי הקשר ומציג מונה הודעות אם יש"""
+    # שמירת האינדקס שנבחר כרגע כדי לא לאבד פוקוס
+    current_selection_index = users_listbox.curselection()
+    
+    users_listbox.delete(0, tk.END)
+    
+    for i, user in enumerate(active_users_list):
+        count = unread_counts.get(user, 0)
+        
+        # בניית הטקסט לתצוגה
+        if count > 0:
+            display_text = f"{user} ({count})" # דוגמה: Moshe (3)
+        else:
+            display_text = user
+            
+        users_listbox.insert(tk.END, display_text)
+        
+        # אם זה המשתמש שאנחנו מדברים איתו כרגע, נסמן אותו ברשימה מחדש
+        if current_chat_partner == user:
+            users_listbox.selection_set(i)
 
 def get_time():
     return datetime.now().strftime("%H:%M")
@@ -149,15 +179,13 @@ def refresh_chat_view():
         timestamp = item['time']
         
         # חישוב גדלים ומיקומים
-        # משתמשים בטקסט זמני כדי למדוד רוחב נדרש
         text_id = chat_canvas.create_text(0, 0, text=text, font=("Helvetica", 11), anchor="nw")
         bbox = chat_canvas.bbox(text_id)
         chat_canvas.delete(text_id)
         
-        width = bbox[2] - bbox[0] + 30 # קצת ריווח
+        width = bbox[2] - bbox[0] + 30 
         height = bbox[3] - bbox[1] + 25
         
-        # גבולות הבועה
         canvas_width = chat_canvas.winfo_width()
         
         if is_me:
@@ -181,7 +209,7 @@ def refresh_chat_view():
         # ציור הזמן
         chat_canvas.create_text(x2 - 5, y2 - 5, text=timestamp, fill=COLORS["time"], font=("Helvetica", 8), anchor="se")
         
-        y_pos += height + 10 # קידום המיקום להודעה הבאה
+        y_pos += height + 10 
 
     # גלילה אוטומטית למטה
     chat_canvas.config(scrollregion=chat_canvas.bbox("all"))
@@ -213,11 +241,11 @@ def send_message(event=None):
         "time": get_time()
     })
     
-    # 3. עדכון מסך וניקוי שורה
+    # 3. עדכון מסך
     msg_entry.delete(0, tk.END)
     refresh_chat_view()
 
-# כפתור שליחה (אייקון חץ או טקסט)
+# כפתור שליחה
 send_btn = tk.Button(input_frame, text="➤", command=send_message, bg=COLORS["bg"], fg=COLORS["btn"], 
                      font=("Helvetica", 16), borderwidth=0, activebackground=COLORS["bg"])
 send_btn.pack(side=tk.RIGHT, padx=10)
@@ -227,18 +255,27 @@ def on_user_select(event):
     global current_chat_partner
     selection = users_listbox.curselection()
     if selection:
-        selected_user = users_listbox.get(selection[0])
-        # מניעת בחירה בעצמך (למרות שזה לא אמור לקרות כי השרת לא ישלח אותך ברשימה, אבל ליתר ביטחון)
+        raw_text = users_listbox.get(selection[0])
+        
+        # ניקוי הטקסט מהמונה: הופך את "Moshe (3)" בחזרה ל-"Moshe"
+        selected_user = raw_text.split(" (")[0]
+        
         if selected_user == username: 
             return
             
         current_chat_partner = selected_user
+        
+        # איפוס מונה ההודעות למשתמש זה כי נכנסנו לצ'אט איתו
+        unread_counts[selected_user] = 0
+        update_sidebar() # רענון הרשימה להעלמת המספר
+        
         refresh_chat_view()
 
 users_listbox.bind("<<ListboxSelect>>", on_user_select)
 
 # --- האזנה לשרת ---
 def receive_messages():
+    global active_users_list
     while True:
         try:
             data = client.recv(1024).decode()
@@ -247,16 +284,20 @@ def receive_messages():
             # מקרה 1: עדכון רשימת משתמשים
             if data.startswith("LIST|"):
                 users_str = data.split("|")[1]
-                active_users = users_str.split(",")
+                temp_list = users_str.split(",")
                 
-                # עדכון ה-Listbox ב-Main Thread
-                users_listbox.delete(0, tk.END)
-                for user in active_users:
-                    if user != username: # אל תציג את עצמי ברשימה
-                        users_listbox.insert(tk.END, user)
-                        # אם עדיין אין לנו היסטוריה איתו, ניצור רשימה ריקה
-                        if user not in conversations:
-                            conversations[user] = []
+                # סינון עצמי מהרשימה
+                active_users_list = [u for u in temp_list if u != username]
+                
+                # יצירת רישום בהיסטוריה ובמונים למשתמשים חדשים
+                for user in active_users_list:
+                    if user not in conversations:
+                        conversations[user] = []
+                    if user not in unread_counts:
+                        unread_counts[user] = 0
+                
+                # עדכון התצוגה בצד (כולל מונים שנשמרים)
+                update_sidebar()
             
             # מקרה 2: הודעה רגילה
             elif data.startswith("MSG|"):
@@ -272,9 +313,14 @@ def receive_messages():
                     "time": get_time()
                 })
                 
-                # אם אנחנו כרגע בצ'אט עם השולח, נרענן את המסך
+                # בדיקה: האם אנחנו כרגע בתוך הצ'אט עם השולח?
                 if current_chat_partner == sender:
-                    refresh_chat_view() # קריאה ישירה כי אנחנו ב-Thread נפרד, ב-Tkinter לפעמים צריך after, אבל כאן זה יעבוד פשוט
+                    # כן -> רק נרענן את הצ'אט
+                    refresh_chat_view()
+                else:
+                    # לא -> נעלה את מונה ההודעות שלא נקראו
+                    unread_counts[sender] = unread_counts.get(sender, 0) + 1
+                    update_sidebar() # ונעדכן את הרשימה בצד להצגת המספר
                     
         except Exception as e:
             print("Error receiving:", e)
