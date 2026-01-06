@@ -1,108 +1,134 @@
-# PySocket Chat System
+# 📡 פרויקט גמר – רשתות תקשורת מחשבים (Computer Networks)
 
-## Introduction
-In this document, we present a chat system project based on TCP sockets, including its design, implementation, and analysis using Python.
-The goal is to understand fundamental networking concepts, client–server communication, and the architecture of distributed systems. 
-The project was developed by Noa Rachamim, Noa Zadok and Liran Shterenberg — Computer Science students.
+ברוכים הבאים לרפוזיטורי של פרויקט הגמר שלנו.
+הפרויקט עוסק בניתוח תעבורת רשת ובניית יישומים בתקשורת נתונים, ומחולק לשני חלקים עיקריים.
 
 ---
 
-## Features
-- Implement two-way communication between clients and a central server using TCP.
-- Enable the server to handle multiple clients concurrently.
-- Allow clients to initiate a private chat with another client by specifying the target client's unique username.
-- Capture and analyze the network traffic of the application using Wireshark.
+## 📚 חלק 1: סימולציית אריזת מידע וניתוח Wireshark
+
+**קבצים:** `raw_tcp_ip_notebook...ipynb`, `group...csv`, `...pcap`
+
+בחלק זה ביצענו סימולציה של תהליך ה־**Encapsulation (כימוס)** שעובר על מידע ברשת.
+
+מה כולל החלק:
+
+* **Jupyter Notebook:** מימוש בקוד Python של בניית חבילות (Packets) דרך שכבות ה־TCP/IP.
+* **Wireshark:** לכידת תעבורת רשת וניתוח פרוטוקולים כדי להבין כיצד המידע נראה "על הכבל".
+
+> פירוט מלא על חלק זה מופיע בדוח המסכם המצורף לתיקייה.
 
 ---
 
-## Technical Requirements
+## 💬 חלק 2: אפליקציית צ'אט (TCP Chat App)
 
-### **1. Communication**
-- The system uses the **TCP protocol**.
-- Full duplex communication between clients and the server.
-- The server supports **at least 5 simultaneous client connections**.
+**קבצים:** `server_1.py`, `client_gui_1.py`, `client.py`
 
-### **2. System Structure**
-#### **Server**
-- Listens for incoming client connections.
-- Manages a list of active clients and their unique usernames.
-- Upon receiving a client request to communicate with another client, the server creates a chat session between the two.
+### 📌 על הפרויקט
 
-#### **Client**
-- Connects to the server using a unique username.
-- Can send and receive messages in real time.
-- Text-based interface (no GUI required).
+זהו החלק המרכזי של הפרויקט. פיתחנו אפליקציית מסרים מיידיים (בדומה ל־WhatsApp) הפועלת בארכיטקטורת **Client–Server** על גבי פרוטוקול **TCP**.
 
-### **3. Restrictions**
-- The implementation must use **raw sockets only** — no frameworks like Spring or pre-built networking libraries.
-- Threading or multiprocessing is used to support multiple clients.
-- Example references used during development:
-  - Basic TCP socket example  
-    (https://pymotw.com/2/socket/tcp.html)
-  - Multi-client Python socket server  
-    (https://www.dunebook.com/creating-a-python-socket-server-with-multiple-clients)
+### 🔧 תיאור המערכת
 
-### **4. Code Standards**
-- Code is readable, documented, and logically organized across files/classes.
-- Error handling is included — e.g., unexpected client disconnection.
+* מספר משתמשים יכולים להתחבר לשרת מרכזי.
+* כל משתמש מקבל רשימה מעודכנת בזמן אמת של המשתמשים המחוברים.
+* ניתן לנהל שיחות פרטיות בין משתמשים.
+* המערכת תומכת ב־**Multi-threading**, כך שהממשק הגרפי אינו נתקע בזמן המתנה להודעות.
+
+### ✨ פיצ'רים מרכזיים
+
+* 🎨 **GUI:** ממשק גרפי מודרני (Dark Mode) עם בועות הודעה.
+* 🔄 **עדכון חי:** רשימת אנשי הקשר מתעדכנת אוטומטית.
+* 🔔 **התראות:** חיווי ויזואלי על הודעות שלא נקראו.
 
 ---
 
-## Project Structure
-project/
-├── server.py # Server implementation (TCP, multithreading)
-├── client.py # Client implementation (username-based)
-├── traffic_capture.pcap # Wireshark traffic capture file
-├── analysis_report.pdf # Network traffic analysis up to Network Layer
-└── README.md # Project documentation
+## 🛠️ דרישות מערכת (Prerequisites)
+
+כדי להריץ את הפרויקט נדרשת סביבת Python בסיסית בלבד.
+
+### מה צריך להתקין?
+
+1. **Python 3.x** (מומלץ גרסה 3.6 ומעלה).
+2. **ספריות Python סטנדרטיות בלבד:**
+
+   * `socket`
+   * `threading`
+   * `tkinter`
+
+> ❗ אין צורך לבצע `pip install` – הפרויקט משתמש רק בספריות המובנות של Python.
+
+### תקלות נפוצות
+
+* אם מתקבלת השגיאה:
+
+  ```
+  ModuleNotFoundError: No module named 'tkinter'
+  ```
+
+  (נפוץ ב־Linux / Mac), או אם השרת אינו עולה – יש לפנות לסטודנטים יוצרי הפרויקט.
 
 ---
 
-##  How to Run the Application
+## 🚀 הוראות הרצה (How to Run)
 
-### **1. Start the server**
-
-### **2. Start one or more clients**
-
-### **3. Enter a unique username**
-Each client must identify itself with a unique name.
-
-### **4. Open a chat**
-Type the username of the target client you want to chat with.
-
-### **5. Start sending messages**
-The server routes messages privately between the two selected clients.
+⚠️ **חשוב מאוד:** סדר ההפעלה קריטי! יש להפעיל קודם את השרת ורק לאחר מכן את הלקוחות.
 
 ---
 
-## Network Traffic Capture
+### שלב 1: הפעלת השרת (Server)
 
-### **1. Capturing the traffic**
-- Wireshark was used to capture all TCP packets exchanged between the server and clients.
-- The recorded traffic is saved in a `.pcap` file (`traffic_capture.pcap`).
+השרת חייב לרוץ ברקע לאורך כל זמן השימוש בצ'אט.
 
-### **2. Traffic Analysis**
-The analysis includes:
-- The TCP 3-way handshake
-- Client–server message flows
-- Port numbers and socket connections
-- Segmentation and reassembly behavior
-- Network layer analysis (IP headers, packet routing)
-- Identification of chat session patterns in the TCP stream
+1. פתחו Terminal / CMD בתיקיית הפרויקט.
+2. הריצו את הפקודה:
 
-The detailed analysis is included in `analysis_report.pdf`.
+```bash
+python server_1.py
+```
 
----
+פלט תקין:
 
-## Future Improvements
-- Adding encrypted communication (TLS)
-- User authentication & password system
-- Group chat support
-- Graphical user interface (GUI)
-- Offline message storage
+```
+Server running on 0.0.0.0:5566...
+```
+
+⚠️ **אין לסגור את חלון השרת!** סגירתו תפסיק את פעולת הצ'אט.
 
 ---
 
-## Authors
-**Noa Rachamim, Noa Zadok and Liran Shterenberg**  
-Computer Science Students
+### שלב 2: הפעלת הלקוח (Client GUI)
+
+1. פתחו חלון Terminal חדש (לא אותו חלון של השרת).
+2. הריצו את הפקודה:
+
+```bash
+python client_gui_1.py
+```
+
+3. ייפתח חלון Login – הכניסו שם משתמש (לדוגמה: `Noa`) ולחצו **OK**.
+
+### 👥 פתיחת משתמשים נוספים
+
+כדי לפתוח משתמש נוסף:
+
+* פתחו Terminal נוסף.
+* הריצו שוב:
+
+  ```
+  python client_gui_1.py
+  ```
+
+---
+
+## 👥 Authors
+
+הפרויקט נכתב ופותח על־ידי:
+
+* נעם רחמים
+* נועה צדוק
+* לירן שטרנברג
+
+---
+
+בהצלחה! 🚀
