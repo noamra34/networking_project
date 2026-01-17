@@ -18,8 +18,8 @@ COLORS = {
     "notification": "#00a884"  # צבע מונה הודעות (ירוק)
 }
 
-SERVER_IP = "127.0.0.1"
-PORT = 5566
+SERVER_IP = "127.0.0.1" # כתובת השרת
+PORT = 5566             # הפורט להתקשרות
 
 # --- משתנים גלובליים ---
 client = None
@@ -38,11 +38,11 @@ unread_counts = {}
 active_users_list = []
 
 root = tk.Tk()
-root.withdraw() # החבאה עד להתחברות
+root.withdraw() # החבאה עד להתחברות מוצלחת
 
 # --- פונקציות עזר לציור בועות ---
 def create_rounded_rect(canvas, x1, y1, x2, y2, radius=25, **kwargs):
-    """פונקציה שמציירת מלבן עם פינות עגולות בקנבס"""
+    """פונקציה שמציירת מלבן עם פינות עגולות בקנבס (לעיצוב בועות צ'אט)"""
     points = [x1+radius, y1,
               x1+radius, y1,
               x2-radius, y1,
@@ -69,7 +69,7 @@ def create_rounded_rect(canvas, x1, y1, x2, y2, radius=25, **kwargs):
 while not username:
     input_user = simpledialog.askstring("Login", "Enter your username:")
     
-    if input_user is None: # לחצו ביטול
+    if input_user is None: # אם לחצו ביטול
         exit()
         
     if not input_user.strip():
@@ -77,9 +77,10 @@ while not username:
         continue
         
     try:
+        # יצירת סוקט וניסיון חיבור
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.connect((SERVER_IP, PORT))
-        client.send(input_user.encode())
+        client.send(input_user.encode()) # שליחת השם לבדיקה
         
         resp = client.recv(1024).decode()
         if resp == "APPROVE":
@@ -92,7 +93,7 @@ while not username:
         exit()
 
 # --- הגדרת החלון הראשי ---
-root.deiconify()
+root.deiconify() # הצגת החלון הראשי
 root.title(f"WhatsApp Clone | {username}")
 root.geometry("900x600")
 root.configure(bg=COLORS["bg"])
@@ -104,9 +105,13 @@ main_container.pack(fill=tk.BOTH, expand=True)
 # סרגל צד (רשימת משתמשים)
 sidebar = tk.Frame(main_container, bg=COLORS["sidebar"], width=250)
 sidebar.pack(side=tk.LEFT, fill=tk.Y)
-sidebar.pack_propagate(False) # שומר על רוחב קבוע
+sidebar.pack_propagate(False) # שומר על רוחב קבוע לסרגל
 
-tk.Label(sidebar, text="Contacts", bg=COLORS["sidebar"], fg=COLORS["text"], font=("Helvetica", 14, "bold")).pack(pady=10)
+# === כאן הוספתי את השם שלך כמו שביקשת ===
+# כותרת המציגה "Hello Username" בצד שמאל למעלה
+tk.Label(sidebar, text=f"Hello, {username}", bg=COLORS["sidebar"], fg=COLORS["btn"], font=("Helvetica", 14, "bold")).pack(pady=(20, 5))
+
+tk.Label(sidebar, text="Contacts", bg=COLORS["sidebar"], fg=COLORS["text"], font=("Helvetica", 12)).pack(pady=5)
 
 users_listbox = tk.Listbox(sidebar, bg=COLORS["sidebar"], fg=COLORS["text"], 
                            selectbackground=COLORS["list_select"], borderwidth=0, font=("Helvetica", 12))
@@ -138,12 +143,12 @@ def update_sidebar():
     # שמירת האינדקס שנבחר כרגע כדי לא לאבד פוקוס
     current_selection_index = users_listbox.curselection()
     
-    users_listbox.delete(0, tk.END)
+    users_listbox.delete(0, tk.END) # ניקוי הרשימה
     
     for i, user in enumerate(active_users_list):
         count = unread_counts.get(user, 0)
         
-        # בניית הטקסט לתצוגה
+        # בניית הטקסט לתצוגה (עם מונה אם צריך)
         if count > 0:
             display_text = f"{user} ({count})" # דוגמה: Moshe (3)
         else:
@@ -156,11 +161,12 @@ def update_sidebar():
             users_listbox.selection_set(i)
 
 def get_time():
+    """מחזיר שעה נוכחית כמחרוזת"""
     return datetime.now().strftime("%H:%M")
 
 def refresh_chat_view():
     """מנקה את המסך ומצייר מחדש את השיחה עם המשתמש שנבחר"""
-    chat_canvas.delete("all") # ניקוי
+    chat_canvas.delete("all") # ניקוי כל הציורים מהקנבס
     
     if not current_chat_partner:
         header_lbl.config(text="Select a contact to start chatting")
@@ -168,17 +174,17 @@ def refresh_chat_view():
 
     header_lbl.config(text=f"Chat with {current_chat_partner}")
     
-    # שליפת ההיסטוריה
+    # שליפת ההיסטוריה מהמילון
     msgs = conversations.get(current_chat_partner, [])
     
-    y_pos = 20
+    y_pos = 20 # מיקום התחלתי לציר ה-Y
     
     for item in msgs:
         is_me = (item['sender'] == 'me')
         text = item['msg']
         timestamp = item['time']
         
-        # חישוב גדלים ומיקומים
+        # יצירת טקסט זמני כדי לחשב גודל בועה
         text_id = chat_canvas.create_text(0, 0, text=text, font=("Helvetica", 11), anchor="nw")
         bbox = chat_canvas.bbox(text_id)
         chat_canvas.delete(text_id)
@@ -188,6 +194,7 @@ def refresh_chat_view():
         
         canvas_width = chat_canvas.winfo_width()
         
+        # חישוב מיקום הבועה (ימין או שמאל)
         if is_me:
             rect_color = COLORS["my_bubble"]
             x1 = canvas_width - width - 30
@@ -209,13 +216,14 @@ def refresh_chat_view():
         # ציור הזמן
         chat_canvas.create_text(x2 - 5, y2 - 5, text=timestamp, fill=COLORS["time"], font=("Helvetica", 8), anchor="se")
         
-        y_pos += height + 10 
+        y_pos += height + 10 # קידום השורה להודעה הבאה
 
     # גלילה אוטומטית למטה
     chat_canvas.config(scrollregion=chat_canvas.bbox("all"))
     chat_canvas.yview_moveto(1)
 
 def send_message(event=None):
+    """פונקציה לשליחת הודעה"""
     global current_chat_partner
     msg = msg_entry.get().strip()
     
@@ -241,7 +249,7 @@ def send_message(event=None):
         "time": get_time()
     })
     
-    # 3. עדכון מסך
+    # 3. עדכון מסך וניקוי שורת הקלט
     msg_entry.delete(0, tk.END)
     refresh_chat_view()
 
@@ -249,9 +257,10 @@ def send_message(event=None):
 send_btn = tk.Button(input_frame, text="➤", command=send_message, bg=COLORS["bg"], fg=COLORS["btn"], 
                      font=("Helvetica", 16), borderwidth=0, activebackground=COLORS["bg"])
 send_btn.pack(side=tk.RIGHT, padx=10)
-msg_entry.bind("<Return>", send_message)
+msg_entry.bind("<Return>", send_message) # מאפשר שליחה עם Enter
 
 def on_user_select(event):
+    """פונקציה שנקראת כשבוחרים משתמש מהרשימה"""
     global current_chat_partner
     selection = users_listbox.curselection()
     if selection:
@@ -275,6 +284,7 @@ users_listbox.bind("<<ListboxSelect>>", on_user_select)
 
 # --- האזנה לשרת ---
 def receive_messages():
+    """פונקציה שרצה ברקע ומאזינה להודעות מהשרת"""
     global active_users_list
     while True:
         try:
@@ -329,6 +339,7 @@ def receive_messages():
 threading.Thread(target=receive_messages, daemon=True).start()
 
 def on_closing():
+    """סגירת החלון וניתוק מהשרת"""
     try: client.close()
     except: pass
     root.destroy()
